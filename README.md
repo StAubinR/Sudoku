@@ -7,4 +7,5 @@ This javascript program containt three majors functions to eliminate candidates:
 1) findn: find naked and nidden n pair.  "n pair" here can be 2, 3, .. n number.
 2) findblc: find block, line column that intersect.
 3) findxwn: find xwing with n column/line, like swordfish and jelly fish.
+
 I expect to add more strategie one day if people are interested.
