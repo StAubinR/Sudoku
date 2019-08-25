@@ -353,8 +353,6 @@ function load(lsg) {
                            "L("+al.map(x=>x+1).join(",")+") "+
                            "C("+ac.map(x=>itoa[x]).join(",")+")";
                 for (var m=0; m<abm.length; m++) {
-                  //console.log("Removing: ", i+1, " in ",
-                  //    ivgToString(blc[swlc][arCol[j]][abm[m]]), msg);
                   rc = addtorc(rc, blc[swlc][arCol[j]][abm[m]], 1<<i, msg);
                 }
               }
@@ -635,8 +633,6 @@ function load(lsg) {
         bar[k][i].push(ar);
       }
     }
-    console.log(bar);
-    throw(1);
   }
   function shownp() {
     var mo = "";
