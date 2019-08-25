@@ -9,3 +9,5 @@ This javascript program containt three majors functions to eliminate candidates:
 3) findxwn: find xwing with n column/line, like swordfish and jelly fish.
 
 I expect to add more strategies one day if people are interested.
+
+If you want to try this webpage, just click the html file, click raw at upper right and right click and save as.  Open your download and click the html file.  I do not know any easier way to do it.
