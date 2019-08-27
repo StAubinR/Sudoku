@@ -257,30 +257,24 @@ function load(lsg) {
     for (var l=0; l<nbcg; l++) {           // For all cells
       if (bCount(cag[l]) >= 2){            // Need at least 2 numbers in a cell
         for (var k=0; k<3; k++) {          // For all block line column
-          var blcset = blc[k][iblc[k][l]];    // Find a block line column number for l cell
-          var ip = 1;
-          var sp = blcset.indexOf(l);         // Start the paire sequence with L cell
-          var p  = [sp,sp+1];                 // And it next one
-          while (ip>=1) {                     // We check all combination?
-            for (var i=ip+1; i<n; i++) {      // Fill the paire sequence with next one
-              p[i] = p[i-1]+1;
-            }
+          var blcset = blc[k][iblc[k][l]]; // Find a block line column number for l cell
+          var sp = blcset.indexOf(l);      // Start the paire sequence with L cell
+          var p  = [sp,sp+1,sp+2,sp+3,sp+4].slice(0,n); // And it next one
+          do {
             // Simple validation for this combinaison
-            while (ip<n && p[ip]<nbcs+ip-n && bCount(cag[blcset[p[ip]]])>=2) { ip++ };
-            if (ip==n) {                      // It might be valid
-              var bor = 0;                    // Take all numbers in a paire position
-              for (var i=0; i<n; i++) {
-                bor |= cag[blcset[p[i]]];
-              }
-              if (!alone) {                   // For paire alone remove every number
-                for (var i=0; i<nbcs; i++){   // that is not on pair cells
+            for (var i=0,bor=0; i<n && bCount(cag[blcset[p[i]]])>=2; i++) {
+              bor |= cag[blcset[p[i]]];
+            }
+            if (i==n) {
+              if (!alone) {                 // For paire alone remove every number
+                for (var i=0; i<nbcs; i++){ // that is not on pair cells
                   if (!p.includes(i)) {
-                    bor &= ~cag[blcset[i]];    // keep only the one on P
+                    bor &= ~cag[blcset[i]]; // keep only the one on P
                   }
                 }
               }
-              if (bCount(bor)==n) {           // At the end we should have n number left
-                var ps = [];                  // Build a display to show what it is about
+              if (bCount(bor)==n) {         // At the end we should have n number left
+                var ps = [];                // Build a display to show what it is about
                 for (var i=0; i<n; i++) {
                   ps[i] = ivgToString(blcset[p[i]]);
                 }
@@ -291,20 +285,16 @@ function load(lsg) {
                       rc = addtorc(rc, blcset[i], bor&cag[blcset[i]], msg);
                     }
                   }
-                } else {                       // Paire with other number
-                  for (var i=0; i<n; i++){     // Remove everything that is not on Pair
-                    if (cag[blcset[p[i]]]&~bor){   // Found something to remove
+                } else {                         // Paire with other number
+                  for (var i=0; i<n; i++){       // Remove everything that is not on Pair
+                    if (cag[blcset[p[i]]]&~bor){ // Found something to remove
                       rc = addtorc(rc, blcset[p[i]], cag[blcset[p[i]]]&~bor, msg);
                     }
                   }
                 }
               }
             }
-            if (ip==n || p[ip]>=nbcs+ip-n) {  // Are we at the limit?
-              ip--;
-            }
-            p[ip]++;                          // Try a new combinaison
-          }
+          } while (nComb(p));  // Try a new combinaison
         }
       }
     }
@@ -665,11 +655,11 @@ function load(lsg) {
 //       " 92 3 81 45  189 21 8 296      5 2  2  86 1  5   4 3  847396521961 7  83325 8 769";
 //       " 41 2589395    4622 8   715    8 3  312564978 89   6  8962135 71     286 2    139";
 // Game Puzzle
-   sg = "1    2  8   9  7   674  1  6     54           98     1  3  185   9  5   4  7    2"
-//     sg = " 3 48 6 9    27   8  3      19      78   2 93     487      5  6   13    9 2 48 1 ";
+//  sg = "1    2  8   9  7   674  1  6     54           98     1  3  185   9  5   4  7    2"
+//  sg = " 3 48 6 9    27   8  3      19      78   2 93     487      5  6   13    9 2 48 1 ";
 // sg = " 374816 9 9  27 388  3 9    19873 6 78   2 93   9 487    295  6   1369  962748315"; //  XWing H7=8 C8=8   
 // sg = " 374816 9 9  27 388  3 9    19873 6 78   2 93   9 487    295 86  81369  962748315"; 
-//   sg = "  8 7   939 18   67  9   824 38 921782 7  9341793245686    8 93 3 6978 198  3 6 5"; // XWing Rotated
+   sg = "  8 7   939 18   67  9   824 38 921782 7  9341793245686    8 93 3 6978 198  3 6 5"; // XWing Rotated
     crGrid(document.getElementById("board"));  // Create a Sudoku board
   } else {
     sg = lsg;
