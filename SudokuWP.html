@@ -251,7 +251,7 @@ function load(lsg) {
     return rc;
   }
   // Find n cells with n same number alone or with other in a set
-  // Naked or hiddem 2 or 3 or ... n 
+  // Naked(alone) or hiddem(!alone) 2 or 3 or ... n 
   function findn(rc,cag,n,mode){
     var alone     = mode=="alone";         // Pair without other in a cell
     for (var l=0; l<nbcg; l++) {           // For all cells
@@ -263,10 +263,10 @@ function load(lsg) {
           do {
             // Simple validation for this combinaison
             for (var i=0,bor=0; i<n && bCount(cag[blcset[p[i]]])>=2; i++) {
-              bor |= cag[blcset[p[i]]];
+              bor |= cag[blcset[p[i]]];     // Every number in a group at p[i]
             }
-            if (i==n) {
-              if (!alone) {                 // For paire alone remove every number
+            if (i==n) {                     // All p[i] in a group have 2 or more candidates
+              if (!alone) {                 // For hidden paire remove every number
                 for (var i=0; i<nbcs; i++){ // that is not on pair cells
                   if (!p.includes(i)) {
                     bor &= ~cag[blcset[i]]; // keep only the one on P
@@ -279,13 +279,13 @@ function load(lsg) {
                   ps[i] = ivgToString(blcset[p[i]]);
                 }
                 var msg = 'P:('+ps.join(',')+')=('+binToString(bor)+')';
-                if (alone) {                   // Remove the pair number on other cells
-                  for (var i=0; i<nbcs; i++){
+                if (alone) {                     // Naked pair
+                  for (var i=0; i<nbcs; i++){    // Remove pair number on other cells
                     if (!p.includes(i) && bor&cag[blcset[i]]){ // Found something to remove
                       rc = addtorc(rc, blcset[i], bor&cag[blcset[i]], msg);
                     }
                   }
-                } else {                         // Paire with other number
+                } else {                         // Hidden pair
                   for (var i=0; i<n; i++){       // Remove everything that is not on Pair
                     if (cag[blcset[p[i]]]&~bor){ // Found something to remove
                       rc = addtorc(rc, blcset[p[i]], cag[blcset[p[i]]]&~bor, msg);
