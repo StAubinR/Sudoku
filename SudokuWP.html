@@ -610,20 +610,6 @@ function load(lsg) {
     }
     return msg;
   }
-  function showPCag(pcag) {
-    var bar = []
-    for (var k=0; k<3; k++) {
-    bar[k] = [];
-      for (var i=0; i<nbcs; i++) {
-        bar[k][i] = [];
-        var ar = []
-        for (var j=0; j<nbcs; j++) {
-          ar.push(binToArray(pcag[k][i][j]));
-        }
-        bar[k][i].push(ar);
-      }
-    }
-  }
   function shownp() {
     var mo = "";
     for (var i=0; i<np.length; i++) {
