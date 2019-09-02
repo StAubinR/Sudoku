@@ -101,7 +101,6 @@ var blc = [[[],[],[],[],[],[],[],[],[]],
 var iblc = [[],[],[]];                      // Index in blc of each position
 var entry       = false;
 var showCagFlag = false;
-var loopCcount  = 0;
 // sg: Starting grid as a string
 // cg: Current grid as a string
 // cag: Candidate grid as a vector of 81
@@ -466,26 +465,6 @@ function findSol(cg) {
     sol += (i!=nbcs)?'unsolved':'solved';
   }
   return sol;
-}
-// Find how many solution Sudoku
-function countSolution(sg, ivg=0) {
-  var count = 0;
-  if (ivg<nbcg) {
-    if (sg.charAt(ivg)==' ') {
-      for (var i=1; i<=nbcs; i++) {
-        if (validIvg(sg,ivg,i)) {
-          sg = putAMoveTocg(sg,ivg,i);
-          count += countSolution(sg,ivg+1);
-          sg = putAMoveTocg(sg,ivg," ");
-        }
-      }
-    } else {
-      count += countSolution(sg,ivg+1);
-    }
-  } else {
-    count = 1;
-  }
-  return count;
 }
 // When you type a number, I start here.
 //  i: Line, j:column, value: number you type
