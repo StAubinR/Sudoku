@@ -1,6 +1,8 @@
 # Sudoku
 Sudoku Webpage to help, solve, validate, create and teach with algorithms (naked and hidden n pairs, intersection, xwing)
 
+You can try it here: https://staubinr.github.io/Sudoku/SudokuWP.html
+
 This is just one html page under 1000 lines with javascript to test algorithms to solve Sudoku puzzles like humans do.  I tried to keep things as simple as possible without any fancy javascript stuff.  I tried to focus on algorthms that people can use to solve a puzzle.  If anybody has more fun coding a Sudoko Puzzle than to solve one, let me know.
 
 This program has the following options:
