@@ -3,11 +3,12 @@
 <head> 
   <title>:: Sudoku Solver ::</title> 
   <style type="text/css">
-  #main, #left, #ppln, #right, #board {margin: 2px; padding: 2px;}
+  #main, #mid, #ppln, #right, #left {margin: 2px; padding: 2px;}
   #ppln, #right {border: 2px solid black; }
-  #main, #footer, button, textarea {float: left; clear: both;}
-  #board, #left, #ppln, #right {float: left;}
+  #main, #footer, #showURL, button, textarea {float: left; clear: both;}
+  #left, #mid, #ppln, #right {float: left;}
   #main #solution, #main textarea {font-family: monospace; }
+  #showURL {width: 400px; overflow-wrap: break-word; word-break: break-all;}
   #board table {
     border-collapse:collapse;
     border:3px solid black;
@@ -46,17 +47,22 @@
   #main table td.box    { border-left-width: 2px;}
   </style>
 </head> 
-<body onLoad="load();"> 
+<body onLoad="init();"> 
   <div id="main">
-    <div id="board" ></div>
     <div id="left">
+      <div id="board" ></div>
+      <div id="showURL" onclick="selectText('showURL')"></div>
+    </div>
+    <div id="mid">
       <div id="but">
         <button id="clearBoard"  onclick="clearBoard()">Clear Board</button>
         <button id="showCand"    onclick="showCand(this)">Show Candidates</button>
         <button id="validate"    onclick="validGrid(this)">Valid Grid</button>
-        <button id="newEasyGrid" onclick="newEasyGrid()">New Easy</button>
-        <button id="newHardGrid" onclick="newHardGrid()">New Hard</button>
+        <button id="newEasyGrid" onclick="startBoard(newSg('easy'));">New Easy</button>
+        <button id="newHardGrid" onclick="startBoard(newSg('hard'));">New Hard</button>
         <button id="tips"        onclick="tips()">Show Tips</button>
+        <button id="url"         onclick="url()">Show URL</button>
+        <button id="pdf"         onclick="pdf()">Create PDF</button>
         <button id="loadBoard"   onclick="loadBoard()">Load Board</button>
         <textarea id="boardInput" rows="9" cols="8" onchange ="formatText()" onkeyup="formatText()"></textarea>
       </div>
@@ -71,9 +77,10 @@
       </div>
     </div>
   </div>
-  <div id="footer">2019 Richard</div>
+  <div id="footer">2020 Richard</div>
 </body> 
-</html> 
+</html>
+  <script src="https://unpkg.com/jspdf@latest/dist/jspdf.min.js"></script>
   <script type="text/javascript"> 
 "use strict";
 // Vocabulary:
@@ -84,8 +91,8 @@
 // ca or Candidate: Possible choice for a cell
 // group: Group of 9 cells. One row, column or box
 // Global var
-const nl  = "\n";
-const br  = "\<br/\>";
+const nl  = '\n';
+const br  = '\<br/\>';
 const sp  = '&nbsp;';
 const dim = 3;              // 3x3 sudoku board
 const nbcs = dim*dim;       // 9 cells in a set (line, column, block)
@@ -141,7 +148,7 @@ function binToArray0(bin){
   return binToArrayN(bin,0);
 }
 // Give the position of all bit on in a number
-// Example: 3 will give "1,2"
+// Example: 3 will give '1,2'
 function binToString(bin){
   return binToArray(bin).join(',');
 }
@@ -152,7 +159,7 @@ function bCount(bin){
   }
   return i;
 }
-// Convert "Remove Candidate" to a String you can read
+// Convert 'Remove Candidate' to a String you can read
 function rcToString(rc){
   var msg = [];
   for (var i=0; i<rc.length; i++){
@@ -255,7 +262,7 @@ function findblc(rc,cag){
 // Find n cells with n same number alone or with other in a set
 // Naked(alone) or hiddem(!alone) 2 or 3 or ... n 
 function findn(rc,cag,n,mode){
-  var alone     = mode=="alone";         // Pair without other in a cell
+  var alone     = mode=='alone';         // Pair without other in a cell
   for (var l=0; l<nbcg; l++) {           // For all cells
     if (bCount(cag[l]) >= 2){            // Need at least 2 numbers in a cell
       for (var k=0; k<3; k++) {          // For all block line column
@@ -331,7 +338,7 @@ function findxwn(rc,cag,n) {
           orCand |= pcand;
         };
         if (j==n && bCount(orCand)==n) {
-          var msg = k==1?" Lines":" Columns";
+          var msg = k==1?' Lines':' Columns';
           var arCol = binToArray0(orCand);  // It is an XWingn, something to remove?
           var swlc  = k==1?2:1             // We flip from line/col to Col/line
           for (var j=0; j<n; j++) {        // For all n columns
@@ -341,9 +348,9 @@ function findxwn(rc,cag,n) {
               var abm = binToArray0(bm);
               var al  = (k==1)?p:arCol;
               var ac  = (k==1)?arCol:p;
-              var msg  = ["XWing","Sword Fish","Jelly Fish"][n-2]+" "+
-                         "L("+al.map(x=>x+1).join(",")+") "+
-                         "C("+ac.map(x=>itoa[x]).join(",")+")";
+              var msg  = ['XWing','Sword Fish','Jelly Fish'][n-2]+' '+
+                         'L('+al.map(x=>x+1).join(',')+') '+
+                         'C('+ac.map(x=>itoa[x]).join(',')+')';
               for (var m=0; m<abm.length; m++) {
                 rc = addtorc(rc, blc[swlc][arCol[j]][abm[m]], 1<<i, msg);
               }
@@ -409,7 +416,7 @@ function validmove(ivg,value,sg,cag){
 }
 // Add this number to a list of Number already Placed
 function addTonp(ivg, num) {
-  if (num != " ") {
+  if (num != ' ') {
     np[inp]   = [ivg, num];
     inp++;
     np.length = inp;
@@ -435,13 +442,13 @@ function findSol(cg) {
       var rc = [];
       rc = findblc(rc,cag);  // Intersec is easier that pair
       if (rc.length==0) {
-        rc = findn(rc,cag,2,"alone");
+        rc = findn(rc,cag,2,'alone');
         if (rc.length==0){
-          rc = findn(rc,cag,2,"with");
+          rc = findn(rc,cag,2,'with');
           if (rc.length==0){
-            rc = findn(rc,cag,3,"alone");
+            rc = findn(rc,cag,3,'alone');
             if (rc.length==0) {
-              rc = findn(rc,cag,3,"with");
+              rc = findn(rc,cag,3,'with');
               if (rc.length==0) {
                 rc = findxwn(rc, pcag, 2);
                 if (rc.length==0) {
@@ -494,14 +501,17 @@ function onkeyup(i,j,value) {
     if (cell.getElementsByTagName('div').length) {
       cell.removeChild(cell.getElementsByTagName('div')[0]);
     }
-    cell.getElementsByTagName('input')[0].style.opacity = "";
+    cell.getElementsByTagName('input')[0].style.opacity = '';
     var sol = findSol(cg);
   }
   if (showCagFlag) {
     showCag();
   }
-  document.getElementById("msg").innerHTML = msg;
-  document.getElementById("sol").innerHTML = 'Solution'+br+sol;
+  document.getElementById('msg').innerHTML = msg;
+  document.getElementById('sol').innerHTML = 'Solution'+br+sol;
+  if (document.getElementById('url').innerHTML == 'Hide URL') {
+    document.getElementById('showURL').innerHTML = setLink('board', cg.replace(/ /g,'0'));
+  }
   return value;
 }
 // Create an HTML board with this Sudoku Problem
@@ -548,7 +558,7 @@ function setGrid(sg){
       var inObj = rows[l+1].getElementsByTagName('td')[c+1]
                .getElementsByTagName('input')[0];
       inObj.value = sg.charAt(c+nbcs*l);
-      inObj.style.opacity = "";
+      inObj.style.opacity = '';
     }
   }
 }
@@ -621,56 +631,62 @@ function pnToString(pn){
   return msg;
 }
 function shownp() {
-  var mo = "";
+  var mo = '';
   for (var i=0; i<np.length; i++) {
-    mo += (inp==i?'>':sp)+ivgToString(np[i][0])+"="+np[i][1]+br;
+    mo += (inp==i?'>':sp)+ivgToString(np[i][0])+'='+np[i][1]+br;
   }
-  document.getElementById("move").innerHTML = mo;
+  document.getElementById('move').innerHTML = mo;
 }
 //
 //  Begin Here
 //
+// Some Sudoku problem to solve
+//  sg = ' 41 2 89 5     6 22 8   7 5    8     1 564 7   9   6  8  213  71       6 2     3 ';
+//  sg = ' 41 2589395    4622 8   715    8 3  312564978 89   6  8962135 71     286 2    139';
+//  sg = ' 92 3 81 45  189 21 8 296      5 2  2  86 1  5   4 3  847396521961 7  83325 8 769';
+//       ' 92 3 81 45  189 21 8 296      5 2  2  86 1  5   4 3  847396521961 7  83325 8 769';
+//       ' 41 2589395    4622 8   715    8 3  312564978 89   6  8962135 71     286 2    139';
+//  sg=  '   9   2  45 2  8  6    1    4  1  5  2 3  6139  5     7 8   9  1      4   6     '; // hard one found
+//  sg = '1    2  8   9  7   674  1  6     54           98     1  3  185   9  5   4  7    2'
+//  sg = '   841263 86     5   65  78 4  258 66   187 28   673    8 3652  9  8 63 36 5   8 '
+//  sg = ' 374816 9 9  27 388  3 9    19873 6 78   2 93   9 487    295  6   1369  962748315'; //  XWing H7=8 C8=8   
+//  sg = ' 374816 9 9  27 388  3 9    19873 6 78   2 93   9 487    295 86  81369  962748315'; 
+//  sg = '  8 7   939 18   67  9   824 38 921782 7  9341793245686    8 93 3 6978 198  3 6 5'; // XWing Rotated
+//  sg = '   841263 86     5   65  78 4  258 66   187 28   673    8 3652  9  8 63 36 5   8 ';  // Intersec before pair
+// New board to load
 function load(lsg) {
-// Build Block Line Column table and it index
-  if (lsg === undefined) {
-    for (var i=0; i<nbcg; i++) {
-      var c = i%nbcs;
-      var l = (i-c)/nbcs;
-      var b1 = (c-c%dim)/dim + (l-l%dim);
-      var b2 = c%dim + dim*(l%dim);
-      blc[0][b1][b2] = i;
-      blc[1][l][c] = i;
-      blc[2][c][l] = i;
-      iblc[0][i]   = b1;
-      iblc[1][i]   = l
-      iblc[2][i]   = c;
-    };
-    // Some Sudoku problem to solve
-//  sg = " 41 2 89 5     6 22 8   7 5    8     1 564 7   9   6  8  213  71       6 2     3 ";
-//  sg = " 41 2589395    4622 8   715    8 3  312564978 89   6  8962135 71     286 2    139";
-//  sg = " 92 3 81 45  189 21 8 296      5 2  2  86 1  5   4 3  847396521961 7  83325 8 769";
-//       " 92 3 81 45  189 21 8 296      5 2  2  86 1  5   4 3  847396521961 7  83325 8 769";
-//       " 41 2589395    4622 8   715    8 3  312564978 89   6  8962135 71     286 2    139";
-//  sg=  "   9   2  45 2  8  6    1    4  1  5  2 3  6139  5     7 8   9  1      4   6     "; // hard one found
-// Game Puzzle
-//  sg = "1    2  8   9  7   674  1  6     54           98     1  3  185   9  5   4  7    2"
-//  sg = "   841263 86     5   65  78 4  258 66   187 28   673    8 3652  9  8 63 36 5   8 "
-  sg = " 3 48 6 9    27   8  3      19      78   2 93     487      5  6   13    9 2 48 1 ";
-// sg = " 374816 9 9  27 388  3 9    19873 6 78   2 93   9 487    295  6   1369  962748315"; //  XWing H7=8 C8=8   
-// sg = " 374816 9 9  27 388  3 9    19873 6 78   2 93   9 487    295 86  81369  962748315"; 
-//   sg = "  8 7   939 18   67  9   824 38 921782 7  9341793245686    8 93 3 6978 198  3 6 5"; // XWing Rotated
-//  sg = "   841263 86     5   65  78 4  258 66   187 28   673    8 3652  9  8 63 36 5   8 ";  // Intersec before pair
-    crGrid(document.getElementById("board"));  // Create a Sudoku board
-  } else {
-    sg = lsg;
-  }
+  sg   = lsg;
   cg   = sg;           // cg: current position with move added, sg: starting position
   cag  = crCa(cg);     // cag: board of candidate
   ocag = crCa(cg);     // cag: board of candidate before update
   pcag = crCaPo(cag);  // Candidate Position
   
   setGrid(cg);         // Put numbers in Grid
-  document.getElementById("sol").innerHTML    = 'Solution'+br+findSol(cg);  // display moves
+  document.getElementById('sol').innerHTML    = 'Solution'+br+findSol(cg);  // display moves
+}
+// Webpage entry point
+function init() {
+  // Build Block Line Column table and it index
+  for (var i=0; i<nbcg; i++) {
+    var c = i%nbcs;
+    var l = (i-c)/nbcs;
+    var b1 = (c-c%dim)/dim + (l-l%dim);
+    var b2 = c%dim + dim*(l%dim);
+    blc[0][b1][b2] = i;
+    blc[1][l][c] = i;
+    blc[2][c][l] = i;
+    iblc[0][i]   = b1;
+    iblc[1][i]   = l
+    iblc[2][i]   = c;
+  };
+  sg = getPrm('board');
+  if (sg==='') {
+    sg = ' 3 48 6 9    27   8  3      19      78   2 93     487      5  6   13    9 2 48 1 ';
+  } else {
+    sg = sg.replace(/0/g,' ');
+  }
+  crGrid(document.getElementById('board'));  // Create a Sudoku board
+  load(sg);  
 }
 function boardFocus(i,j){
   document.getElementById('board')
@@ -689,29 +705,29 @@ function boardFocusNextSpace(i, j) {
   }
 }
 function startBoard(sg) {
-  sg = sg.replace(/\n/g,"");
+  sg = sg.replace(/\n/g,'');
   if (sg && sg.length==nbcg) {
-    document.getElementById("boardInput").value = "";
+    document.getElementById('boardInput').value = '';
     load(sg);
     showCag();
   } else {
-    document.getElementById("msg").innerHTML = "Invalid board: "+br;
+    document.getElementById('msg').innerHTML = 'Invalid board: '+br;
     if (sg.length!=nbcg) {
-      document.getElementById("msg").innerHTML += "Wrong length: "+sg.length+br;
+      document.getElementById('msg').innerHTML += 'Wrong length: '+sg.length+br;
     }
   }
 }
 function clearBoard() {
   entry = true;
-  startBoard(" ".repeat(81));
+  startBoard(' '.repeat(81));
 }
 function loadBoard(sg) {
-  sg = document.getElementById("boardInput").value;
+  sg = document.getElementById('boardInput').value;
   startBoard(sg);
 }
 function formatText() {
-  var txt = document.getElementById("boardInput").value;
-  document.getElementById("boardInput").value = txt.match(/(.{1,9})/g).join("\n");
+  var txt = document.getElementById('boardInput').value;
+  document.getElementById('boardInput').value = txt.match(/(.{1,9})/g).join('\n');
 }
 // Show cnadidates on Grid Screen
 function showCag() {
@@ -724,7 +740,7 @@ function showCag() {
       var ivg = j+i*nbcs;
       var cell = rows[i+1].getElementsByTagName('td')[j+1];
       if (showCagFlag && cg.charAt(ivg)==' ') {
-        var txt = "";
+        var txt = '';
         for (var k=1; k<=nbcs; k++) {
           // TO DO Use rc
           if (ocag[ivg]&bval[k]) {
@@ -741,16 +757,16 @@ function showCag() {
         }
         if (!cell.getElementsByTagName('div').length) {
           var div  = document.createElement('div');
-              div.className = "smtxt";
+              div.className = 'smtxt';
           cell.insertBefore(div, cell.getElementsByTagName('input')[0]);
         }
-        cell.getElementsByTagName('input')[0].style.opacity = "0.2";
+        cell.getElementsByTagName('input')[0].style.opacity = '0.2';
         cell.getElementsByTagName('div')[0].innerHTML       = txt;
       }
       if ((!showCagFlag || cg.charAt(ivg)!=' ') && 
            cell.getElementsByTagName('div').length)  {
         cell.removeChild(cell.getElementsByTagName('div')[0]);
-        cell.getElementsByTagName('input')[0].style.opacity = "";
+        cell.getElementsByTagName('input')[0].style.opacity = '';
       }
     }
   }
@@ -761,18 +777,75 @@ function showCand() {
   showCag();
 }
 function tips() {
-  if (document.getElementById('sol').style.display == "none") {
+  if (document.getElementById('sol').style.display == 'none') {
     document.getElementById('tips').innerHTML = 'Hide Tips';
-    document.getElementById('sol').style.display = "block";
+    document.getElementById('sol').style.display = 'block';
   } else {
-    document.getElementById('sol').style.display = "none";
+    document.getElementById('sol').style.display = 'none';
     document.getElementById('tips').innerHTML = 'Show Tips';
   }
+}
+// Select text in a div
+function selectText(containerid) {
+  window.getSelection()
+    .selectAllChildren(
+      document.getElementById(containerid) 
+    );
+}
+// Create a URL link with a parameter for board
+function setLink(prmName, prmVal) {
+  var rsl   = [];
+  var found = false;
+  location.search
+    .substr(1)
+    .split('&')
+    .forEach(function (item) {
+    console.log(item);
+      var tmp = item.split('=');
+      if (tmp[0] !== prmName) {
+        rsl.push(item);
+      }
+    });
+  rsl.push(prmName+'='+encodeURIComponent(prmVal));
+  return location.origin+location.pathname+'?'+rsl.join('&');
+}
+// Read a URL parameter
+function getPrm(prmName) {
+  var rsl = '';
+  location.search
+      .substr(1)
+      .split('&')
+      .forEach(function (item) {
+        var tmp = item.split('=');
+        if (tmp[0] === prmName) rsl = decodeURIComponent(tmp[1]);
+      });
+  return rsl;
+}
+function url() {
+  if (document.getElementById('url').innerHTML == 'Hide URL') {
+    document.getElementById('url').innerHTML     = 'Show URL';
+    document.getElementById('showURL').innerHTML = '';
+  } else {
+    document.getElementById('url').innerHTML = 'Hide URL';
+    document.getElementById('showURL').innerHTML = setLink('board', cg.replace(/ /g,'0'));
+  }
+}
+// Create a PDF file
+function pdf() {
+  var html = document.getElementById('board');
+  console.log(html);
+  var doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'in',
+    format: 'letter'
+  });
+  doc.setFont("courier");
+  doc.fromHTML(html);
+  doc.save('Sudoku.pdf');
 }
 // Shuffle an array
 function shuffle(arr) {
   return arr.sort(()=>Math.random()-0.5);
-  //return arr;
 }
 // Valid a number(c) at ivg 
 function validIvg(sg,ivg,c) {
@@ -790,7 +863,7 @@ function validIvg(sg,ivg,c) {
 // Find a completed sudoku
 function fastComp(sg,ivg) {
   if (ivg < nbcg) {
-    var fg = "";
+    var fg = '';
     var ic = shuffle(Array(nbcs).fill(0).map((x,i)=>i+1));
     for (var i=0; i < nbcs && !fg; i++) {
       if (validIvg(sg,ivg,ic[i])) {
@@ -812,9 +885,9 @@ function countSolution(sg, maxCount, ivg=0) {
         if (validIvg(sg,ivg,i)) {
           sg = putAMoveTocg(sg,ivg,i);
           count += countSolution(sg,maxCount,ivg+1);
-          sg = putAMoveTocg(sg,ivg," ");
         }
       }
+      sg = putAMoveTocg(sg,ivg,' ');
     } else {
       count += countSolution(sg,maxCount,ivg+1);
     }
@@ -825,15 +898,15 @@ function countSolution(sg, maxCount, ivg=0) {
 }
 function validGrid() {
   var nbSol = countSolution(cg, 1000);
-  var msg   = (nbSol>=1000)?"Over 1000 solutions<br >":
-               (nbSol+" solution"+((nbSol==1)?'':'s')+" for<br >this Sudoku Puzzle");
-  document.getElementById("msg").innerHTML = msg;
+  var msg   = (nbSol>=1000)?'Over 1000 solutions<br >':
+               (nbSol+' solution'+((nbSol==1)?'':'s')+' for<br >this Sudoku Puzzle');
+  document.getElementById('msg').innerHTML = msg;
 }
 // new Easy puzzle SG
 function newSg(sDiff) {
   // Add numbers to grid
   function addNumbers(sg, cag, pcag, sDiff) {
-    var easy = sDiff=="easy";
+    var easy = sDiff=='easy';
     var gotH = false;
         isH  = false;
     do {
@@ -849,9 +922,9 @@ function newSg(sDiff) {
       if (!pn.length  && !easy) {
         isH |= gotH;
         gotH = false;
-        rc = findn(rc,cag,2,"alone");
+        rc = findn(rc,cag,2,'alone');
         if (rc.length==0) {
-          rc = findn(rc,cag,2,"with");
+          rc = findn(rc,cag,2,'with');
         }
         if (rc.length) {
           putrctocag(rc,cag);
@@ -865,7 +938,7 @@ function newSg(sDiff) {
   
   var isH    = false;
   var foundH = false;
-  var easy   = sDiff=="easy";
+  var easy   = sDiff=='easy';
   var fg     = fastComp(' '.repeat(81),0);
   var sCount = 500;  // try n times to find a sudoku
   var count  = sCount;
@@ -888,17 +961,10 @@ function newSg(sDiff) {
     }
     count--;
   } while (!easy && !foundH && 0<count);
-  var msg  = "Found an "+sDiff+" <br>Sudoku Puzzle<br>";
-      msg += (!easy)?" after "+(sCount-count)+" trie(s)<br>":"";
-      msg += "Click a cell<br>and type a number";
-  document.getElementById("msg").innerHTML = msg;
+  var msg  = 'Found an '+sDiff+' <br>Sudoku Puzzle<br>';
+      msg += (!easy)?' after '+(sCount-count)+' trie(s)<br>':'';
+      msg += 'Click a cell<br>and type a number';
+  document.getElementById('msg').innerHTML = msg;
   return sg;
-}
-// New Easy Sudoku Puzzle
-function newEasyGrid() {
-  startBoard(newSg("easy"));
-}
-function newHardGrid() {
-  startBoard(newSg("hard"));
 }
   </script>
